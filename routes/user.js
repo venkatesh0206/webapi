@@ -136,14 +136,14 @@ router.post('/delete-user', function (req, res) {
 
 router.post('/login', function (req, res) {
     let data = req.body;
-    User.getUserByMobile(data.phone, function (err, phoneExist) {
+    User.getUserByEmail(data.email, function (err, emailExist) {
         if (err) {
             res.send({ success: false, error: err });
-        } else if (phoneExist) {
-            if (md5(data.password) === phoneExist.password) {
-                let token = jwt.sign({ username: phoneExist._id, iat: new Date().valueOf() }, 'secret', { expiresIn: '15m' });
+        } else if (emailExist) {
+            if (md5(data.password) === emailExist.password) {
+                let token = jwt.sign({ username: emailExist._id, iat: new Date().valueOf() }, 'secret', { expiresIn: '15m' });
                 let query = {
-                    _id: phoneExist._id
+                    _id: emailExist._id
                 }
                 let update = {
                     token: token,
@@ -185,11 +185,11 @@ router.post('/login', function (req, res) {
 
 router.post('/forgot-password', function (req, res) {
     const data = req.body;
-    User.getUserByMobile(data.phone, function (err, phoneExist) {
+    User.getUserByEmail(data.email, function (err, emailExist) {
         if (err) {
             res.send({ success: false, msg: err });
-        } else if (phoneExist) {
-            let url = 'http://localhost:3000/token' += phoneExist.token;
+        } else if (emailExist) {
+            let url = 'http://localhost:3000/token' += emailExist.token;
             res.send({success: true, data : url})
 
         }else {
@@ -197,6 +197,47 @@ router.post('/forgot-password', function (req, res) {
         }
     })
 
+})
+
+router.post('/reset-password', function(req, res) {
+    const data = req.body;
+    User.getUserByEmail(data.email, function (err, emailExist) {
+        if (err) {
+            res.send({ success: false, msg: err });
+        } else if (emailExist) {
+            let query = {
+                _id: emailExist._id
+            }
+            let update = {
+                password: md5(data.password),
+                updatedDate: new Date().valueOf(),
+
+            }
+            User.updateOne(query, update, function (err, update_user) {
+                if (err) {
+                    res.send({
+                        success: false,
+                        msg: err.message
+                    })
+                }
+                else if (update_user.nModified) {
+                    res.send({
+                        success: true,
+                        msg: 'Updated Successfully'
+                    })
+                }
+                else {
+                    res.send({
+                        success: true,
+                        msg: 'No Changes Found'
+                    })
+                }
+            })
+
+        }else {
+            res.send({success:false, msg : "No User Found"})
+        }
+    })
 })
 
 module.exports = router;
