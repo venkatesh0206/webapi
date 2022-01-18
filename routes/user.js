@@ -1,10 +1,10 @@
 var express = require('express'),
-router = express.Router(),
-mongoose = require('mongoose'),
-config = require('../config/database'),
-User = require('../models/user'),
-md5 = require('md5'),
-jwt = require('jsonwebtoken');
+    router = express.Router(),
+    mongoose = require('mongoose'),
+    config = require('../config/database'),
+    User = require('../models/user'),
+    md5 = require('md5'),
+    jwt = require('jsonwebtoken');
 
 
 
@@ -13,19 +13,19 @@ jwt = require('jsonwebtoken');
 router.post('/add-user', function (req, res) {
     let data = req.body;
     let newData = {
-        name : data.name,
-        phone : data.phone,
-        email : data.email,
-        password : md5(data.password)
+        name: data.name,
+        phone: data.phone,
+        email: data.email,
+        password: md5(data.password)
     }
-    
-    User.count({phone: data.phone }, function(err, phoneCount) {
-        if(err) {
+
+    User.count({ phone: data.phone }, function (err, phoneCount) {
+        if (err) {
             res.send({
                 success: false,
-                        msg: err.message
+                msg: err.message
             })
-        } else if(phoneCount) {
+        } else if (phoneCount) {
             res.send({
                 success: false,
                 msg: "You have this Phone already"
@@ -88,18 +88,18 @@ router.get('/find-user/:phone', function (req, res) {
     }, function (err, user) {
         if (err) {
             res.json({
-                status: false,
+                success: false,
                 msg: 'No Admin found'
             });
         } else {
             if (!user) {
                 res.json({
-                    status: false,
+                    success: false,
                     msg: 'No Admin found'
                 });
             } else {
                 res.json({
-                    status: true,
+                    success: true,
                     msg: 'Admin Found'
                 });
             }
@@ -137,10 +137,10 @@ router.post('/delete-user', function (req, res) {
 router.post('/login', function (req, res) {
     let data = req.body;
     User.getUserByMobile(data.phone, function (err, phoneExist) {
-        if(err) {
-            res.send({status: false, error : err});
-        }else if(phoneExist) {
-            if(md5(data.password) === phoneExist.password){
+        if (err) {
+            res.send({ success: false, error: err });
+        } else if (phoneExist) {
+            if (md5(data.password) === phoneExist.password) {
                 let token = jwt.sign({ username: phoneExist._id, iat: new Date().valueOf() }, 'secret', { expiresIn: '15m' });
                 let query = {
                     _id: phoneExist._id
@@ -148,7 +148,7 @@ router.post('/login', function (req, res) {
                 let update = {
                     token: token,
                     updatedDate: new Date().valueOf(),
-            
+
                 }
                 User.updateOne(query, update, function (err, update_user) {
                     if (err) {
@@ -171,11 +171,11 @@ router.post('/login', function (req, res) {
                     }
                 })
 
-            }else {
-                res.send({status: false, msg : "Invalid Password"});
+            } else {
+                res.send({ success: false, msg: "Invalid Password" });
             }
-        }else {
-            res.send({status : false, msg : "No User Found"})
+        } else {
+            res.send({ success: false, msg: "No User Found" })
         }
 
     })
@@ -183,13 +183,17 @@ router.post('/login', function (req, res) {
 })
 
 
-router.post('/forgot-password', function(req, res) {
+router.post('/forgot-password', function (req, res) {
     const data = req.body;
     User.getUserByMobile(data.phone, function (err, phoneExist) {
-        if(err) {
-            res.send({status: false, msg : err});
-        } else if(phoneExist){
+        if (err) {
+            res.send({ success: false, msg: err });
+        } else if (phoneExist) {
+            let url = 'http://localhost:3000/token' += phoneExist.token;
+            res.send({success: true, data : url})
 
+        }else {
+            res.send({success:false, msg : "No User Found"})
         }
     })
 
